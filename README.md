@@ -12,6 +12,10 @@ A CLI tool to download images from 4chan.
 
 `sudo pacman -S python-requests`
 
+**__macOS & and Windows__**
+
+`pip3 install requests --user
+
 
 
 
