@@ -1,61 +1,59 @@
 #!/usr/bin/env python3
-import os
-import json
+
 import requests
+import json
 import argparse
+import os
 parser = argparse.ArgumentParser()
-parser.add_argument("--thread")
-
-
-def get_json(url):
-    response = requests.get(url)
-    data = json.loads(response.text)
-    return data
-
-def download_file(file_name, file_url):
-    file_ext = file_url.split(".")[-1]
-    try:
-        with open(file_name + "." + file_ext, "wb") as file:
-            response = requests.get(file_url)
-            file.write(response.content)
-            print("Saving {} as {}".format(file_url, file_name + "." + file_ext))
-            return True
-    
-    except IOError:
-        return False
-    
-
-def download_thread_4chan(board, thread_number):
-
-    data = get_json("http://a.4cdn.org/" + board + "/thread/" + thread_number + ".json")
-    
-    dir_to_make = '4chan_' + board + '_' + data["posts"][0]["sub"].replace(" ", "_")
-    if os.path.exists(dir_to_make):
-        os.chdir(dir_to_make)
-    else:
-        os.mkdir(dir_to_make)
-        os.chdir(dir_to_make)
-    count = 0
-    print("Parsing thread: {}".format(data["posts"][0]["sub"]))
-    for i in data["posts"]:
-        try:
-            
-            file_to_download = "http://i.4cdn.org/" + board + "/" + str(i["tim"]) + str(i["ext"])
-            count = count + 1
-            download_file(dir_to_make + "_" + str(count), file_to_download)
-        except KeyError:
-            return ""
-
+parser.add_argument("--url", help="The url of the thread")
 args = parser.parse_args()
-if (args.thread == "" or args.thread == None):
-    print("You need to specify an url.")
+
+def generate_url(thread):
+    thread_id = thread.split("/")[-1]
+    board = thread.split("/")[3]
+    final_url = "https://a.4cdn.org/{}/thread/{}.json".format(board, thread_id)
+
+    return final_url
+
+
+def get_json(json_url):
+    r = requests.get(json_url)
+    json = r.content
+    return json
+
+
+def download_thread(json_data, board, thread_id):
+    c = json.loads(json_data)
+    path_to_save = "./" + board + "/" + thread_id
+    if os.path.exists(path_to_save):
+        os.chdir(path_to_save)
+
+    else:
+        os.mkdir("./" + board)
+        os.mkdir("./" + board + "/" + thread_id)
+        os.chdir(path_to_save)
+
+    print("Saving pictures in sub directory: " + path_to_save)
+    for i in c["posts"]:
+        try:
+            filename = "{}{}".format(i["tim"], i["ext"])
+            file_url = "https://i.4cdn.org/{}/{}".format(board, filename)
+            print("Downloading {}".format(file_url))
+            w = requests.get(file_url)
+            with open(filename, 'wb') as f:
+                f.write(w.content)
+
+        except KeyError:
+            print("")
+
+
+if args.url == None or args.url == "":
+    print("You need to specify the url")
     exit(-1)
-else:
-    url = args.thread
-    if (url.startswith("https://boards.4chan.org") or url.startswith("http://boards.4chan.org") or url.startswith("https://boards.4channel.org") or url.startswith("https://boards.4channel.org")):
-        url = url.split("/")
-        thread = url[-1]
-        board = url[3]
-        download_thread_4chan(board, thread)
 
-
+q = args.url
+board = q.split("/")[3]
+thread_id = q.split("/")[-1]
+api_url = generate_url(q)
+shit = get_json(api_url)
+download_thread(shit, board, thread_id)
