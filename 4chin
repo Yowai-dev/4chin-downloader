@@ -24,13 +24,12 @@ def get_json(json_url):
 
 def download_thread(json_data, board, thread_id):
     c = json.loads(json_data)
-    path_to_save = "./" + board + "/" + thread_id
+    path_to_save = "./" + thread_id + "-" + board
     if os.path.exists(path_to_save):
         os.chdir(path_to_save)
 
     else:
-        os.mkdir("./" + board)
-        os.mkdir("./" + board + "/" + thread_id)
+        os.mkdir(path_to_save)
         os.chdir(path_to_save)
 
     print("Saving pictures in sub directory: " + path_to_save)
